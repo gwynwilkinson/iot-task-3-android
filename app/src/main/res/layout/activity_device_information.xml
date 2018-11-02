@@ -1,0 +1,121 @@
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:paddingBottom="10dip"
+    android:paddingLeft="10dip"
+    android:paddingTop="10dip">
+
+    <TextView
+        android:id="@+id/message"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingLeft="10dip"
+        android:background="@color/message_background"
+        android:textSize="16dp"
+        android:text="" />
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/deviceView"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical"
+            android:paddingBottom="10dip"
+            android:paddingLeft="10dip"
+            android:paddingTop="10dip">
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="vertical"
+                android:paddingBottom="5dip">
+
+                <ImageView
+                    android:id="@+id/microbit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingTop="20dip"
+                    android:paddingBottom="30dip"
+                    android:src="@drawable/microbit2_150"/>
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dip"
+                        android:paddingTop="5dip"
+                        android:text="@string/model_number"
+                        android:textStyle="bold"
+                        android:layout_columnWeight="1"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:id="@+id/model_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dip"
+                        android:paddingTop="5dip"
+                        android:text=""
+                        android:layout_columnWeight="1"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dip"
+                        android:paddingTop="5dip"
+                        android:text="@string/serial_number"
+                        android:textStyle="bold"
+                        android:layout_columnWeight="1"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:id="@+id/serial_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dip"
+                        android:paddingTop="5dip"
+                        android:text=""
+                        android:layout_columnWeight="1"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dip"
+                        android:paddingTop="5dip"
+                        android:text="@string/firmware_revision"
+                        android:textStyle="bold"
+                        android:layout_columnWeight="1"
+                        android:textSize="16dp" />
+
+                    <TextView
+                        android:id="@+id/firnware_revision"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="10dip"
+                        android:paddingTop="5dip"
+                        android:text=""
+                        android:layout_columnWeight="1"
+                        android:textSize="16dp" />
+
+
+
+                </GridLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
