@@ -7,10 +7,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -66,6 +68,18 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         // connect to the Bluetooth smart service
         Intent gattServiceIntent = new Intent(this, BleAdapterService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+
+        // Set up a listener for the edit text done button
+        EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
+        text.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    sendText();
+                    return true;
+                }
+                return false;            }
+        });
     }
 
     @Override
@@ -177,7 +191,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                             return;
                         }
                         Log.d(Constants.TAG, "micro:bit: " + ascii);
-                            showResponse(ascii);
+                        showResponse(ascii);
                     }
                     break;
                 case BleAdapterService.MESSAGE:
@@ -219,16 +233,34 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     public void serviceDiscoveryStatusChanged(boolean new_state) {
     }
 
+
     public void onSendText(View view) {
         Log.d(Constants.TAG, "onSendText");
+        sendText();
+    }
+
+    private void sendText() {
         EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
         Log.d(Constants.TAG, "onSendText: " + text.getText().toString());
         try {
-            String question = text.getText().toString() + ":";
-            byte[] ascii_bytes = question.getBytes("US-ASCII");
-            Log.d(Constants.TAG, "ASCII bytes: 0x" + Utility.byteArrayAsHexString(ascii_bytes));
-            bluetooth_le_adapter.writeCharacteristic(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
-            guess_count++;
+            // Add the end of message terminator
+            String fullText = text.getText().toString() + ":";
+//            String fullText = "123456789098765432101234567890:";
+
+            Log.d(Constants.TAG, "onSendText fullText: " + fullText);
+
+            // Split the text and send over BLE.
+            for( int i = 0, j=0; i < fullText.length(); i=i+20, j++) {
+                String splitText = fullText.substring(i, Math.min(i + 20, fullText.length()));
+
+                byte[] ascii_bytes = splitText.getBytes("US-ASCII");
+                Log.d(Constants.TAG, "ASCII bytes: 0x" + Utility.byteArrayAsHexString(ascii_bytes) + " - Length: " + ascii_bytes.length);
+                bluetooth_le_adapter.writeCharacteristic(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
+
+                // Add a delay between sending the chunks.
+                SystemClock.sleep(200);
+            }
+
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             showMsg("Unable to convert text to ASCII bytes");
