@@ -12,6 +12,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,11 +20,20 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.plump_monkey.iotble.bluetooth.BleAdapterService;
 import com.plump_monkey.iotble.bluetooth.ConnectionStatusListener;
 
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 public class UartActivity extends AppCompatActivity implements ConnectionStatusListener {
 
@@ -246,6 +256,42 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             // Add the end of message terminator
             String fullText = text.getText().toString() + ":";
 //            String fullText = "123456789098765432101234567890:";
+
+            String uwe = "UWE";
+            String key = "0000000000000000";
+            byte[] byteKey = {0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+            SecretKeySpec secretKeySpec = new SecretKeySpec(byteKey, "AES");
+            try {
+                Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+
+                try {
+                    cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+
+                    try {
+                        byte[] encrypted = cipher.doFinal(uwe.getBytes());
+                        Log.d(Constants.TAG, "Cipher Generated:" + Utility.byteArrayAsHexString(encrypted) + " - Length: " + encrypted.length);
+                        Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(byteKey) + " - Length: " + key.length());
+
+                        showResponse(Utility.byteArrayAsHexString(encrypted));
+
+                    }  catch (BadPaddingException e) {
+                        e.printStackTrace();
+                        showMsg("BadPaddingException");
+
+                    } catch (IllegalBlockSizeException e) {
+                        e.printStackTrace();
+                        showMsg("IllegalBlockSizeException");
+                    }
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                    showMsg("Invalid key");
+                }
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                e.printStackTrace();
+                showMsg("Unable to initialise cipher");
+            }
+
 
             Log.d(Constants.TAG, "onSendText fullText: " + fullText);
 
