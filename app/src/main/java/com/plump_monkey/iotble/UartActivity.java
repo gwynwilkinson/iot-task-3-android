@@ -11,8 +11,8 @@ import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
+import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,7 +20,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.plump_monkey.iotble.bluetooth.BleAdapterService;
 import com.plump_monkey.iotble.bluetooth.ConnectionStatusListener;
@@ -201,7 +200,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                             return;
                         }
                         Log.d(Constants.TAG, "micro:bit: " + ascii);
-                        showResponse(ascii);
+                        showAlert( "Microbit Response", ascii);
                     }
                     break;
                 case BleAdapterService.MESSAGE:
@@ -222,9 +221,9 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         });
     }
 
-    private void showResponse(String response) {
+    private void showAlert(String headerMsg, String response) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Microbit Response");
+        builder.setTitle(headerMsg);
         builder.setMessage(response);
         builder.setPositiveButton(android.R.string.ok, null);
         builder.show();
@@ -253,60 +252,69 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
         Log.d(Constants.TAG, "onSendText: " + text.getText().toString());
         try {
-            // Add the end of message terminator
-            String fullText = text.getText().toString() + ":";
-//            String fullText = "123456789098765432101234567890:";
 
-            String uwe = "UWE";
-            String key = "0000000000000000";
+            String fullText = text.getText().toString();
+
+            // TODO use the PIN and a salt as the Key.
             byte[] byteKey = {0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
+            // Storage for the encrypted text
+            byte[] encrypted = null;
+
+            // Setup the Secret Key
             SecretKeySpec secretKeySpec = new SecretKeySpec(byteKey, "AES");
+
+            // Get the Cipher instance with AES-128-ECB and PKCS5 padding as the parameters
             try {
                 Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
 
                 try {
+                    // Initialise the Cipher with the key
                     cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
-
                     try {
-                        byte[] encrypted = cipher.doFinal(uwe.getBytes());
-                        Log.d(Constants.TAG, "Cipher Generated:" + Utility.byteArrayAsHexString(encrypted) + " - Length: " + encrypted.length);
-                        Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(byteKey) + " - Length: " + key.length());
+                        // Encrypt the protocol text
+                        encrypted = cipher.doFinal(fullText.getBytes());
 
-                        showResponse(Utility.byteArrayAsHexString(encrypted));
+                        // Debug logs to show the output
+                        Log.d(Constants.TAG, "Cipher Generated:" + Utility.byteArrayAsHexString(encrypted) + " - Length: " + encrypted.length);
+                        Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(byteKey) + " - Length: " + byteKey.length);
 
                     }  catch (BadPaddingException e) {
                         e.printStackTrace();
-                        showMsg("BadPaddingException");
+                        showAlert("Error", "BadPaddingException");
 
                     } catch (IllegalBlockSizeException e) {
                         e.printStackTrace();
-                        showMsg("IllegalBlockSizeException");
+                        showAlert("Error", "IllegalBlockSizeException");
                     }
                 } catch (InvalidKeyException e) {
                     e.printStackTrace();
-                    showMsg("Invalid key");
+                    showAlert("Error", "Invalid key");
                 }
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
                 e.printStackTrace();
-                showMsg("Unable to initialise cipher");
+                showAlert("Error", "Unable to initialise cipher");
             }
-
 
             Log.d(Constants.TAG, "onSendText fullText: " + fullText);
 
-            // Split the text and send over BLE.
-            for( int i = 0, j=0; i < fullText.length(); i=i+20, j++) {
-                String splitText = fullText.substring(i, Math.min(i + 20, fullText.length()));
+            // Split the encrypted text and send over BLE.
+            String encryptedString =  Utility.byteArrayAsHexString(encrypted);
 
-                byte[] ascii_bytes = splitText.getBytes("US-ASCII");
-                Log.d(Constants.TAG, "ASCII bytes: 0x" + Utility.byteArrayAsHexString(ascii_bytes) + " - Length: " + ascii_bytes.length);
-                bluetooth_le_adapter.writeCharacteristic(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
+                // Only do this if we had some text
+                if(!TextUtils.isEmpty(encryptedString)) {
 
-                // Add a delay between sending the chunks.
-                SystemClock.sleep(200);
+                for (int i = 0, j = 0; i < encryptedString.length(); i = i + 20, j++) {
+                    String splitText = encryptedString.substring(i, Math.min(i + 20, encryptedString.length()));
+
+                    byte[] ascii_bytes = splitText.getBytes("US-ASCII");
+                    Log.d(Constants.TAG, "ASCII bytes: 0x" + Utility.byteArrayAsHexString(ascii_bytes) + " - Length: " + ascii_bytes.length);
+                    bluetooth_le_adapter.writeCharacteristic(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
+
+                    // Add a delay between sending the chunks.
+                    SystemClock.sleep(400);
+                }
             }
-
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             showMsg("Unable to convert text to ASCII bytes");
