@@ -84,7 +84,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    sendText();
+                    sendPIN();
                     return true;
                 }
                 return false;            }
@@ -243,14 +243,15 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     }
 
 
-    public void onSendText(View view) {
-        Log.d(Constants.TAG, "onSendText");
-        sendText();
+    public void onSendPIN(View view) {
+        Log.d(Constants.TAG, "onSendPIN");
+        sendPIN();
     }
 
-    private void sendText() {
+    // Handler for the "Send PIN" Button
+    private void sendPIN() {
         EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
-        Log.d(Constants.TAG, "onSendText: " + text.getText().toString());
+        Log.d(Constants.TAG, "onSendPIN: " + text.getText().toString());
         try {
 
             String fullText = text.getText().toString();
@@ -296,7 +297,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 showAlert("Error", "Unable to initialise cipher");
             }
 
-            Log.d(Constants.TAG, "onSendText fullText: " + fullText);
+            Log.d(Constants.TAG, "onSendPIN fullText: " + fullText);
 
             // Split the encrypted text and send over BLE.
             String encryptedString =  Utility.byteArrayAsHexString(encrypted);
