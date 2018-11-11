@@ -26,7 +26,9 @@ import com.plump_monkey.iotble.bluetooth.ConnectionStatusListener;
 
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -253,17 +255,28 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
         Log.d(Constants.TAG, "onSendPIN: " + text.getText().toString());
         try {
+            // Obtain the string of the pin from the EditText box
+            String inputPIN = text.getText().toString();
 
-            String fullText = text.getText().toString();
+            // Hard code the salt. This must be the same on the MicroBit
+            String salt = "ThisIsMySaltThereAreManyLikeIt";
 
-            // TODO use the PIN and a salt as the Key.
-            byte[] byteKey = {0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            // Hash the PIN and Salt to create the dpk
+            byte[] dpk = sha1Hash(inputPIN + salt);
 
+            Log.d(Constants.TAG, "DPK Created:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
+
+            // The returned dpk is 20 bytes long (SHA-1 block length)
+            // But the key for AES-128-ECB is 16 bytes. Truncate the string
             // Storage for the encrypted text
+            dpk = Arrays.copyOf(dpk, 16);
+
+            Log.d(Constants.TAG, "Truncated DPK:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
+
             byte[] encrypted = null;
 
             // Setup the Secret Key
-            SecretKeySpec secretKeySpec = new SecretKeySpec(byteKey, "AES");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(dpk, "AES");
 
             // Get the Cipher instance with AES-128-ECB and PKCS5 padding as the parameters
             try {
@@ -273,12 +286,17 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                     // Initialise the Cipher with the key
                     cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
                     try {
+
+                        String textToEncrypt = "IoT-";
+
+                        textToEncrypt = textToEncrypt + inputPIN;
+
                         // Encrypt the protocol text
-                        encrypted = cipher.doFinal(fullText.getBytes());
+                        encrypted = cipher.doFinal(textToEncrypt.getBytes());
 
                         // Debug logs to show the output
                         Log.d(Constants.TAG, "Cipher Generated:" + Utility.byteArrayAsHexString(encrypted) + " - Length: " + encrypted.length);
-                        Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(byteKey) + " - Length: " + byteKey.length);
+                        Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
 
                     }  catch (BadPaddingException e) {
                         e.printStackTrace();
@@ -296,8 +314,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 e.printStackTrace();
                 showAlert("Error", "Unable to initialise cipher");
             }
-
-            Log.d(Constants.TAG, "onSendPIN fullText: " + fullText);
 
             // Split the encrypted text and send over BLE.
             String encryptedString =  Utility.byteArrayAsHexString(encrypted);
@@ -322,4 +338,27 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     }
 
+    public  byte[] sha1Hash (String inputString) {
+        try {
+            // Create SHA-1 Hash
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            try {
+                byte[] bytes = inputString.getBytes("UTF-8");
+
+                digest.update(bytes, 0, bytes.length);
+                bytes = digest.digest();
+
+                Log.d(Constants.TAG, "SHA-1 hash of " + inputString + " == " + Utility.byteArrayAsHexString(bytes) + " - Length: " + bytes.length);
+
+                return(bytes);
+
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return new byte[0];
+    }
 }
