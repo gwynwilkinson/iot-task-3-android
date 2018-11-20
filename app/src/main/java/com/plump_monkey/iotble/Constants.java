@@ -49,4 +49,42 @@ public class Constants {
 
     public static final String AVM_CORRECT_RESPONSE = "GOT IT!!";
 
+    public static final int PROTOCOL_VERSION = 1;
+    public static final int REQUEST = 0;
+    public static final int ACKNOWLEDGE = 1;
+
+    // Service IDs
+    public static final int SERVICE_LED = 1;
+    public static final int SERVICE_BUZZER = 2;
+    public static final int SERVICE_RGB_LED = 3;
+    public static final int SERVICE_FAN = 4;
+
+    // Service Data for LED
+    public static final int SERVICE_LED_OFF = 0;
+    public static final int SERVICE_LED_ON = 1;
+    public static final int SERVICE_LED_SOS = 2;
+
+    // Service Data for Buzzer
+    public static final int SERVICE_BUZZER_OFF = 0;
+    public static final int SERVICE_BUZZER_BASIC = 1;
+    public static final int SERVICE_BUZZER_SIREN = 2;
+    public static final int SERVICE_BUZZER_FANFARE = 3;
+
+    // Service Data for RGB Led
+    public static final int SERVICE_RGB_OFF = 0;
+    public static final int SERVICE_RGB_RED = 1;
+    public static final int SERVICE_RGB_BLUE = 2;
+    public static final int SERVICE_RGB_GREEN = 3;
+    public static final int SERVICE_RGB_MAGENTA = 4;
+    public static final int SERVICE_RGB_YELLOW = 5;
+    public static final int SERVICE_RGB_CYAN = 6;
+    public static final int SERVICE_RGB_WHITE = 7;
+    public static final int SERVICE_RGB_PARTY = 8;
+
+    // Service Data for Fan
+    public static final int SERVICE_FAN_OFF = 0;
+    public static final int SERVICE_FAN_SLOW = 1;
+    public static final int SERVICE_FAN_MED = 2;
+    public static final int SERVICE_FAN_FAST = 3;
+
 }

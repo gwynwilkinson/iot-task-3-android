@@ -37,5 +37,35 @@
     <string name="hardware_revision">Hardware Revision:</string>
     <string name="firmware_revision">Firmware Revision:</string>
 
+    <string name="led">LED</string>
+    <string name="buzzer">Buzzer</string>
+    <string name="rgbled">RGB LED</string>
+    <string name="fan">Fan</string>
+
+    <string name="on">On</string>
+    <string name="sos">SoS</string>
+
+    <string name="basic">Basic</string>
+    <string name="fanfare">Fanfare</string>
+    <string name="siren">Siren</string>
+
+    <string name="slow">Slow</string>
+    <string name="medium">Medium</string>
+    <string name="fast">Fast</string>
+
+    <string name="off">Off</string>
+    <string name="blue">Blue</string>
+    <string name="red">Red</string>
+    <string name="green">Green</string>
+    <string name="magenta">Magenta</string>
+    <string name="yellow">Yellow</string>
+    <string name="cyan">Cyan</string>
+    <string name="white">White</string>
+    <string name="party">Party Mode</string>
+
+
+
+    <string name="select_service">Select Service</string>
+
 
 </resources>

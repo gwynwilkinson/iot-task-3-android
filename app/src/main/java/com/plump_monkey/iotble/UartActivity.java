@@ -1,6 +1,7 @@
 package com.plump_monkey.iotble;
 
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -13,13 +14,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.plump_monkey.iotble.bluetooth.BleAdapterService;
 import com.plump_monkey.iotble.bluetooth.ConnectionStatusListener;
@@ -29,6 +35,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -42,8 +49,12 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 
     private boolean exiting=false;
     private boolean indications_on=false;
-    private int guess_count=0;
+    int ledServiceValue = 0;
+    int rgbLedServiceValue = 0;
+    int fanServiceValue = 0;
+    int buzzerServiceValue = 0;
 
+    // Handler for BT Service Connection indication
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
         @Override
@@ -65,6 +76,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     };
 
+    // Activity onCrate Handler
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,8 +103,174 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 }
                 return false;            }
         });
+
+        final Button serviceDataButton = findViewById(R.id.serviceActionButton);
+
+        serviceDataButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(Constants.TAG, "Service Data Button Pressed");
+
+                RadioButton ledButton = findViewById(R.id.ledRadioButton);
+                RadioButton rgbButton = findViewById(R.id.rgbRadioButton);
+                RadioButton buzzerButton = findViewById(R.id.buzzerRadioButton);
+                RadioButton fanButton = findViewById(R.id.fanRadioButton);
+
+                // See which button is selected
+                if(ledButton.isChecked()) {
+                    // LED button is selected. Build the options list
+                    final CharSequence[] ledItems = {"Off", "On", "SoS"};
+                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
+                    builder.setTitle("LED Options");
+                    builder.setSingleChoiceItems(ledItems, -1, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.d(Constants.TAG, "LED Service Data Selected:- " + which);
+                            // Save the selected value
+                            ledServiceValue = which;
+                            if(which == Constants.SERVICE_LED_OFF) {
+                                serviceDataButton.setText(R.string.off);
+                            } else if(which == Constants.SERVICE_LED_ON){
+                                serviceDataButton.setText(R.string.on);
+                            } else if(which == Constants.SERVICE_LED_SOS){
+                                serviceDataButton.setText(R.string.sos);
+                            }
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.show();
+                } else if ( rgbButton.isChecked() ) {
+                    // RGB button is selected. Build the options list
+
+                    final CharSequence[] rgbLedItems = {"Off", "Red", "Blue", "Green", "Magenta", "Yellow", "Cyan","White","Party"};
+
+                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
+                    builder.setTitle("RGB LED Options");
+                    builder.setSingleChoiceItems(rgbLedItems, -1, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.d(Constants.TAG, "RGB LED Service Data Selected:- " + which);
+                            // Save the selected value
+                            rgbLedServiceValue = which;
+
+                            if(which == Constants.SERVICE_RGB_OFF) {
+                                serviceDataButton.setText(R.string.off);
+                            } else if(which == Constants.SERVICE_RGB_RED){
+                                serviceDataButton.setText(R.string.red);
+                            } else if(which == Constants.SERVICE_RGB_BLUE){
+                                serviceDataButton.setText(R.string.blue);
+                            } else if(which == Constants.SERVICE_RGB_GREEN){
+                                serviceDataButton.setText(R.string.green);
+                            } else if(which == Constants.SERVICE_RGB_MAGENTA){
+                                serviceDataButton.setText(R.string.magenta);
+                            } else if(which == Constants.SERVICE_RGB_YELLOW){
+                                serviceDataButton.setText(R.string.yellow);
+                            } else if(which == Constants.SERVICE_RGB_CYAN){
+                                serviceDataButton.setText(R.string.cyan);
+                            } else if(which == Constants.SERVICE_RGB_WHITE){
+                                serviceDataButton.setText(R.string.white);
+                            } else if(which == Constants.SERVICE_RGB_PARTY) {
+                                serviceDataButton.setText(R.string.party);
+                            }
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.show();
+                } else if ( buzzerButton.isChecked() ) {
+                    // Buzzer button is selected. Build the options list
+
+                    final CharSequence[] buzzerItems = {"Off","Basic","Siren","Fanfare"};
+
+                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
+                    builder.setTitle("Buzzer Options");
+                    builder.setSingleChoiceItems(buzzerItems, -1, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.d(Constants.TAG, "Buzzer Service Data Selected:- " + which);
+                            // Save the selected value
+                            buzzerServiceValue = which;
+
+                            if (which == Constants.SERVICE_BUZZER_OFF) {
+                                serviceDataButton.setText(R.string.off);
+                            } else if (which == Constants.SERVICE_BUZZER_BASIC) {
+                                serviceDataButton.setText(R.string.basic);
+                            } else if (which == Constants.SERVICE_BUZZER_SIREN) {
+                                serviceDataButton.setText(R.string.siren);
+                            } else if (which == Constants.SERVICE_BUZZER_FANFARE) {
+                                serviceDataButton.setText(R.string.fanfare);
+                            }
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.show();
+                } else if ( fanButton.isChecked() ) {
+                    // Fan button is selected. Build the options list
+
+                    final CharSequence[] buzzerItems = {"Off","Slow","Medium","Fast"};
+
+                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
+                    builder.setTitle("Fan Options");
+                    builder.setSingleChoiceItems(buzzerItems, -1, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.d(Constants.TAG, "Fan Service Data Selected:- " + which);
+                            // Save the selected value
+                            fanServiceValue = which;
+
+                            if (which == Constants.SERVICE_FAN_OFF) {
+                                serviceDataButton.setText(R.string.off);
+                            } else if (which == Constants.SERVICE_FAN_SLOW) {
+                                serviceDataButton.setText(R.string.slow);
+                            } else if (which == Constants.SERVICE_FAN_MED) {
+                                serviceDataButton.setText(R.string.medium);
+                            } else if (which == Constants.SERVICE_FAN_FAST) {
+                                serviceDataButton.setText(R.string.fast);
+                            }
+                            dialog.dismiss();
+                        }
+                    });
+                    builder.show();
+                }
+            }
+        });
     }
 
+    // Handler for the radio buttons.
+    // Clears any other radio buttons and resets the text on
+    // the Service Selection button
+    public void onRadioButtonClicked(View view) {
+
+        Button serviceDataButton = findViewById(R.id.serviceActionButton);
+
+        // Button Changed. Clear the values.
+        ledServiceValue = 0;
+        rgbLedServiceValue = 0;
+        fanServiceValue = 0;
+        buzzerServiceValue = 0;
+
+        // Reset the text on the Service Data Button to indicate we need
+        // to select a new service
+        serviceDataButton.setText(R.string.select_service);
+
+        // Clear any other radio buttons
+        switch (view.getId()) {
+
+            case R.id.ledRadioButton:
+            case R.id.fanRadioButton:
+                Log.d(Constants.TAG, "Group 1 pressed");
+                RadioGroup group2 = findViewById(R.id.radioGroup2);
+                group2.clearCheck();
+                break;
+
+            default:
+                Log.d(Constants.TAG, "Group 2 pressed");
+                RadioGroup group1 = findViewById(R.id.radioGroup1);
+                group1.clearCheck();
+                break;
+        }
+    }
+
+    // Handle the onDestroy for the activity
     @Override
     protected void onDestroy() {
         Log.d(Constants.TAG, "onDestroy");
@@ -108,6 +286,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     }
 
+    // Activity back button handler
     public void onBackPressed() {
         Log.d(Constants.TAG, "onBackPressed");
         if (MicroBit.getInstance().isMicrobit_connected() && indications_on) {
@@ -126,6 +305,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         exiting=true;
     }
 
+    // Menu Options
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -147,7 +327,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         return super.onOptionsItemSelected(item);
     }
 
-    // Service message handler
+    // Bluetooth Service message handler
     private Handler mMessageHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -213,6 +393,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     };
 
+    // Display BT service messages
     private void showMsg(final String msg) {
         Log.d(Constants.TAG, msg);
         runOnUiThread(new Runnable() {
@@ -223,12 +404,8 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         });
     }
 
-    private void showAlert(String headerMsg, String response) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(headerMsg);
-        builder.setMessage(response);
-        builder.setPositiveButton(android.R.string.ok, null);
-        builder.show();
+    @Override
+    public void serviceDiscoveryStatusChanged(boolean new_state) {
     }
 
     @Override
@@ -240,23 +417,115 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     }
 
-    @Override
-    public void serviceDiscoveryStatusChanged(boolean new_state) {
+    /******************************************************************************************
+     *
+     * Main functions to handle the IoT message interaction
+     *
+     ******************************************************************************************/
+
+    // Display an Alert box to the user with the supplied message
+    private void showAlert(String headerMsg, String response) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(headerMsg);
+        builder.setMessage(response);
+        builder.setPositiveButton(android.R.string.ok, null);
+        builder.show();
     }
 
-
+    // Handler for the Send PIN button
     public void onSendPIN(View view) {
         Log.d(Constants.TAG, "onSendPIN");
         sendPIN();
     }
 
-    // Handler for the "Send PIN" Button
+    // Format and send the message to Microbit
     private void sendPIN() {
-        EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
-        Log.d(Constants.TAG, "onSendPIN: " + text.getText().toString());
+
+        EditText pinButton = (EditText) UartActivity.this.findViewById(R.id.uartPin);
+        Log.d(Constants.TAG, "onSendPIN: " + pinButton.getText().toString());
+
+        // Check that there has been a service action selected
+        Button serviceActionButton = findViewById(R.id.serviceActionButton);
+
+        if (serviceActionButton.getText().toString().matches("Select Service")) {
+            Log.d(Constants.TAG, "No action selected");
+
+            // No Service Action has been selected. Display an error and quit
+            Toast toast = Toast.makeText(this, "Select a service action", Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+            return;
+        }
+
+        // Check that a PIN has been entered. Otherwise fire an error and return
+        if (pinButton.getText().toString().matches("")) {
+            Log.d(Constants.TAG, "No PIN entered");
+
+            // No Service Action has been selected. Display an error and quit
+            Toast toast = Toast.makeText(this, "Enter a PIN", Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+            return;
+        }
+
+        // Create the protocol message
+        char[] testCharArray = new char[33];
+        String testString = new String();
+
+        RadioButton ledButton = findViewById(R.id.ledRadioButton);
+        RadioButton rgbButton = findViewById(R.id.rgbRadioButton);
+        RadioButton buzzerButton = findViewById(R.id.buzzerRadioButton);
+        RadioButton fanButton = findViewById(R.id.fanRadioButton);
+
+        // Protocol Message definition
+
+//  ---------------------------------------------------------------------------------------
+// | Byte        | 0 | 1 | 2 |  3  |   4  | 5   | 6 | 7 | 8 |  9 | 10 | 11 | 12 | 13 | 14 |
+//  ---------------------------------------------------------------------------------------
+// | Description |   Header  | Prot | Req | Svc |    Service Data          |  Redund | CRC |
+// |             |           | Ver  | ACK | ID  |                          |   Info  |     |
+//  ---------------------------------------------------------------------------------------
+// | Contents    | I   O   T |   1  | 0/1 | 0-FF|   0 - FFFFFFFF          |  Random  |0-FF |
+//  ----------------------------------------------------------------------------------------
+
+        // Set the header, Protocol Version and the Request bit.
+        testString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
+
+        String serviceActionText = serviceActionButton.getText().toString();
+        // See which button is selected
+        if (ledButton.isChecked()) {
+            // LED button is selected. Set the Service ID and the Data
+            testString = testString + Integer.toString(Constants.SERVICE_LED) +
+                    String.format("%05x", ledServiceValue);
+        } else if (rgbButton.isChecked() ) {
+            // RGB button is selected. Set the Service ID and the Data
+            testString = testString + Integer.toString(Constants.SERVICE_RGB_LED) +
+                    String.format("%05x", rgbLedServiceValue);
+        } else if ( buzzerButton.isChecked() ) {
+            // Buzzer button is selected. Set the Service ID and the Data
+            testString = testString + Integer.toString(Constants.SERVICE_BUZZER) +
+                    String.format("%05x", buzzerServiceValue);
+        } else if ( fanButton.isChecked() ) {
+            // Fan button is selected. Set the Service ID and the Data
+            testString = testString + Integer.toString(Constants.SERVICE_FAN) +
+                    String.format("%05x", fanServiceValue);
+        }
+
+        // Add the random number (0x0000-0xFFFF)
+        Random rand = new Random();
+        int n = rand.nextInt(0xff);
+
+        testString = testString + String.format("%02x",n);
+
+        // TODO - CRC
+        // Add the CRC
+        testString = testString + String.format("%02x",0xab);
+
+        Log.d(Constants.TAG, "*****Test String is - " + testString + " Length - "+ testString.length());
+
         try {
             // Obtain the string of the pin from the EditText box
-            String inputPIN = text.getText().toString();
+            String inputPIN = pinButton.getText().toString();
 
             // Hard code the salt. This must be the same on the MicroBit
             String salt = "ThisIsMySaltThereAreManyLikeIt";
@@ -289,7 +558,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 
                         String textToEncrypt = "IoT-";
 
-                        textToEncrypt = textToEncrypt + inputPIN;
+                        textToEncrypt = testString;
 
                         // Encrypt the protocol text
                         encrypted = cipher.doFinal(textToEncrypt.getBytes());
@@ -318,8 +587,12 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             // Split the encrypted text and send over BLE.
             String encryptedString =  Utility.byteArrayAsHexString(encrypted);
 
-                // Only do this if we had some text
-                if(!TextUtils.isEmpty(encryptedString)) {
+            // Only do this if we had some text
+            if(!TextUtils.isEmpty(encryptedString)) {
+
+                Toast toast = Toast.makeText(this, "Sending Command", Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER,0, 0);
+                toast.show();
 
                 for (int i = 0, j = 0; i < encryptedString.length(); i = i + 20, j++) {
                     String splitText = encryptedString.substring(i, Math.min(i + 20, encryptedString.length()));
@@ -331,6 +604,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                     // Add a delay between sending the chunks.
                     SystemClock.sleep(400);
                 }
+
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
