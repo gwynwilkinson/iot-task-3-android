@@ -469,8 +469,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
 
         // Create the protocol message
-        char[] testCharArray = new char[33];
-        String testString = new String();
+        String protocolString = new String();
 
         RadioButton ledButton = findViewById(R.id.ledRadioButton);
         RadioButton rgbButton = findViewById(R.id.rgbRadioButton);
@@ -489,25 +488,25 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 //  ----------------------------------------------------------------------------------------
 
         // Set the header, Protocol Version and the Request bit.
-        testString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
+        protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
 
         String serviceActionText = serviceActionButton.getText().toString();
         // See which button is selected
         if (ledButton.isChecked()) {
             // LED button is selected. Set the Service ID and the Data
-            testString = testString + Integer.toString(Constants.SERVICE_LED) +
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_LED) +
                     String.format("%05x", ledServiceValue);
         } else if (rgbButton.isChecked() ) {
             // RGB button is selected. Set the Service ID and the Data
-            testString = testString + Integer.toString(Constants.SERVICE_RGB_LED) +
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_RGB_LED) +
                     String.format("%05x", rgbLedServiceValue);
         } else if ( buzzerButton.isChecked() ) {
             // Buzzer button is selected. Set the Service ID and the Data
-            testString = testString + Integer.toString(Constants.SERVICE_BUZZER) +
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_BUZZER) +
                     String.format("%05x", buzzerServiceValue);
         } else if ( fanButton.isChecked() ) {
             // Fan button is selected. Set the Service ID and the Data
-            testString = testString + Integer.toString(Constants.SERVICE_FAN) +
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_FAN) +
                     String.format("%05x", fanServiceValue);
         }
 
@@ -515,13 +514,13 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         Random rand = new Random();
         int n = rand.nextInt(0xff);
 
-        testString = testString + String.format("%02x",n);
+        protocolString = protocolString + String.format("%02x",n);
 
         // TODO - CRC
         // Add the CRC
-        testString = testString + String.format("%02x",0xab);
+        protocolString = protocolString + String.format("%02x",0xab);
 
-        Log.d(Constants.TAG, "*****Test String is - " + testString + " Length - "+ testString.length());
+        Log.d(Constants.TAG, "*****Test String is - " + protocolString + " Length - "+ protocolString.length());
 
         try {
             // Obtain the string of the pin from the EditText box
@@ -558,7 +557,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 
                         String textToEncrypt = "IoT-";
 
-                        textToEncrypt = testString;
+                        textToEncrypt = protocolString;
 
                         // Encrypt the protocol text
                         encrypted = cipher.doFinal(textToEncrypt.getBytes());
@@ -590,25 +589,30 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             // Only do this if we had some text
             if(!TextUtils.isEmpty(encryptedString)) {
 
-                Toast toast = Toast.makeText(this, "Sending Command", Toast.LENGTH_SHORT);
-                toast.setGravity(Gravity.CENTER,0, 0);
-                toast.show();
-
-                for (int i = 0, j = 0; i < encryptedString.length(); i = i + 20, j++) {
-                    String splitText = encryptedString.substring(i, Math.min(i + 20, encryptedString.length()));
-
-                    byte[] ascii_bytes = splitText.getBytes("US-ASCII");
-                    Log.d(Constants.TAG, "ASCII bytes: 0x" + Utility.byteArrayAsHexString(ascii_bytes) + " - Length: " + ascii_bytes.length);
-                    bluetooth_le_adapter.writeCharacteristic(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
-
-                    // Add a delay between sending the chunks.
-                    SystemClock.sleep(400);
-                }
+                sendMessage(encryptedString);
 
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             showMsg("Unable to convert text to ASCII bytes");
+        }
+    }
+
+    // Function to send the message.
+    private void sendMessage(String encryptedString) throws UnsupportedEncodingException {
+        Toast toast = Toast.makeText(this, "Sending Command", Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.CENTER,0, 0);
+        toast.show();
+
+        for (int i = 0, j = 0; i < encryptedString.length(); i = i + 20, j++) {
+            String splitText = encryptedString.substring(i, Math.min(i + 20, encryptedString.length()));
+
+            byte[] ascii_bytes = splitText.getBytes("US-ASCII");
+            Log.d(Constants.TAG, "ASCII bytes: 0x" + Utility.byteArrayAsHexString(ascii_bytes) + " - Length: " + ascii_bytes.length);
+            bluetooth_le_adapter.writeCharacteristic(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_RX_CHARACTERISTIC_UUID), ascii_bytes);
+
+            // Add a delay between sending the chunks.
+            SystemClock.sleep(400);
         }
     }
 
