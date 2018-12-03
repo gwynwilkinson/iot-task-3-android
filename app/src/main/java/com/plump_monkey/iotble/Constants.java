@@ -54,6 +54,7 @@ public class Constants {
     public static final int ACKNOWLEDGE = 1;
 
     // Service IDs
+    public static final int SERVICE_SALT = 0;
     public static final int SERVICE_LED = 1;
     public static final int SERVICE_BUZZER = 2;
     public static final int SERVICE_RGB_LED = 3;

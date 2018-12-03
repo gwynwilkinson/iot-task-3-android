@@ -53,6 +53,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     int rgbLedServiceValue = 0;
     int fanServiceValue = 0;
     int buzzerServiceValue = 0;
+    String perSessionSalt = new String();
 
     // Handler for BT Service Connection indication
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -67,6 +68,56 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 showMsg(Utility.htmlColorGreen("UART TX indications ON"));
             } else {
                 showMsg(Utility.htmlColorRed("Failed to set UART TX indications ON"));
+            }
+
+            // Generate and send a per session Salt. Hardcode the PIN and Salt used for the
+            // initial handshake.
+            String protocolString = new String();
+
+            // Set the header, Protocol Version and the Request bit.
+            protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
+
+            // Generate 5 random characters
+            String randomLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!£$%^&*()_+";
+            Random r = new Random();
+
+            // Set the new salt in the perSessionSalt variable
+            for (int i = 0; i < 5; i++) {
+                perSessionSalt += randomLetters.charAt(r.nextInt(randomLetters.length()));
+            }
+
+            // Set the service to show we are sending a Salt, and add the salt to the string.
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_SALT) + perSessionSalt;
+
+            // Generate the Random number bits and add it to the protocol string.
+            protocolString += String.format("%02x",r.nextInt(0xff));
+
+            // TODO - CRC
+            // Add the CRC
+            protocolString += String.format("%02x",0xff);
+
+            Log.d(Constants.TAG, "New Salt Protocol String == " + protocolString);
+
+            // Hard Code the PIN used for the first message
+            String PIN = "123";
+
+            // Hard code the salt. This must be the same on the MicroBit
+            String initialSalt = "ThisIsMySaltThereAreManyLikeIt";
+
+            // Now try and encrypt the protocol message
+            try {
+                byte[] encrypted = encryptString(protocolString, PIN, initialSalt);
+
+                // Split the encrypted text and send over BLE.
+                String encryptedString =  Utility.byteArrayAsHexString(encrypted);
+
+                // Only do this if we had some text
+                if(!TextUtils.isEmpty(encryptedString)) {
+                    sendMessage(encryptedString);
+                }
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                showMsg("Unable to convert text to ASCII bytes");
             }
         }
 
@@ -441,12 +492,12 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     // Format and send the message to Microbit
     private void sendPIN() {
 
+        // Find the PIN Number Edit Text box and dump the Pin to the debug log.
         EditText pinButton = (EditText) UartActivity.this.findViewById(R.id.uartPin);
         Log.d(Constants.TAG, "onSendPIN: " + pinButton.getText().toString());
 
         // Check that there has been a service action selected
         Button serviceActionButton = findViewById(R.id.serviceActionButton);
-
         if (serviceActionButton.getText().toString().matches("Select Service")) {
             Log.d(Constants.TAG, "No action selected");
 
@@ -477,7 +528,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         RadioButton fanButton = findViewById(R.id.fanRadioButton);
 
         // Protocol Message definition
-
 //  ---------------------------------------------------------------------------------------
 // | Byte        | 0 | 1 | 2 |  3  |   4  | 5   | 6 | 7 | 8 |  9 | 10 | 11 | 12 | 13 | 14 |
 //  ---------------------------------------------------------------------------------------
@@ -513,75 +563,20 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         // Add the random number (0x0000-0xFFFF)
         Random rand = new Random();
         int n = rand.nextInt(0xff);
-
         protocolString = protocolString + String.format("%02x",n);
 
         // TODO - CRC
         // Add the CRC
-        protocolString = protocolString + String.format("%02x",0xab);
+        protocolString = protocolString + String.format("%02x",0xff);
 
-        Log.d(Constants.TAG, "*****Test String is - " + protocolString + " Length - "+ protocolString.length());
+        Log.d(Constants.TAG, "Final Protocol String is - " + protocolString + " Length - "+ protocolString.length());
 
+        // Obtain the string of the pin from the EditText box
+        String inputPIN = pinButton.getText().toString();
+
+        // Now try and encrypt the protocol message
         try {
-            // Obtain the string of the pin from the EditText box
-            String inputPIN = pinButton.getText().toString();
-
-            // Hard code the salt. This must be the same on the MicroBit
-            String salt = "ThisIsMySaltThereAreManyLikeIt";
-
-            // Hash the PIN and Salt to create the dpk
-            byte[] dpk = sha1Hash(inputPIN + salt);
-
-            Log.d(Constants.TAG, "DPK Created:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
-
-            // The returned dpk is 20 bytes long (SHA-1 block length)
-            // But the key for AES-128-ECB is 16 bytes. Truncate the string
-            // Storage for the encrypted text
-            dpk = Arrays.copyOf(dpk, 16);
-
-            Log.d(Constants.TAG, "Truncated DPK:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
-
-            byte[] encrypted = null;
-
-            // Setup the Secret Key
-            SecretKeySpec secretKeySpec = new SecretKeySpec(dpk, "AES");
-
-            // Get the Cipher instance with AES-128-ECB and PKCS5 padding as the parameters
-            try {
-                Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
-
-                try {
-                    // Initialise the Cipher with the key
-                    cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
-                    try {
-
-                        String textToEncrypt = "IoT-";
-
-                        textToEncrypt = protocolString;
-
-                        // Encrypt the protocol text
-                        encrypted = cipher.doFinal(textToEncrypt.getBytes());
-
-                        // Debug logs to show the output
-                        Log.d(Constants.TAG, "Cipher Generated:" + Utility.byteArrayAsHexString(encrypted) + " - Length: " + encrypted.length);
-                        Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
-
-                    }  catch (BadPaddingException e) {
-                        e.printStackTrace();
-                        showAlert("Error", "BadPaddingException");
-
-                    } catch (IllegalBlockSizeException e) {
-                        e.printStackTrace();
-                        showAlert("Error", "IllegalBlockSizeException");
-                    }
-                } catch (InvalidKeyException e) {
-                    e.printStackTrace();
-                    showAlert("Error", "Invalid key");
-                }
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                e.printStackTrace();
-                showAlert("Error", "Unable to initialise cipher");
-            }
+            byte[] encrypted = encryptString(protocolString, inputPIN, perSessionSalt);
 
             // Split the encrypted text and send over BLE.
             String encryptedString =  Utility.byteArrayAsHexString(encrypted);
@@ -596,6 +591,63 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             e.printStackTrace();
             showMsg("Unable to convert text to ASCII bytes");
         }
+    }
+
+    private byte[] encryptString(String protocolString, String inputPIN, String salt) {
+        // Hash the PIN and Salt to create the dpk
+        byte[] dpk = sha1Hash(inputPIN + salt);
+
+        Log.d(Constants.TAG, "DPK Created:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
+
+        // The returned dpk is 20 bytes long (SHA-1 block length)
+        // But the key for AES-128-ECB is 16 bytes. Truncate the string
+        // Storage for the encrypted text
+        dpk = Arrays.copyOf(dpk, 16);
+
+        Log.d(Constants.TAG, "Truncated DPK:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
+
+        byte[] encrypted = null;
+
+        // Setup the Secret Key
+        SecretKeySpec secretKeySpec = new SecretKeySpec(dpk, "AES");
+
+        // Get the Cipher instance with AES-128-ECB and PKCS5 padding as the parameters
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+
+            try {
+                // Initialise the Cipher with the key
+                cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+                try {
+
+                    String textToEncrypt = "IoT-";
+
+                    textToEncrypt = protocolString;
+
+                    // Encrypt the protocol text
+                    encrypted = cipher.doFinal(textToEncrypt.getBytes());
+
+                    // Debug logs to show the output
+                    Log.d(Constants.TAG, "Cipher Generated:" + Utility.byteArrayAsHexString(encrypted) + " - Length: " + encrypted.length);
+                    Log.d(Constants.TAG, "Key used:" + Utility.byteArrayAsHexString(dpk) + " - Length: " + dpk.length);
+
+                }  catch (BadPaddingException e) {
+                    e.printStackTrace();
+                    showAlert("Error", "BadPaddingException");
+
+                } catch (IllegalBlockSizeException e) {
+                    e.printStackTrace();
+                    showAlert("Error", "IllegalBlockSizeException");
+                }
+            } catch (InvalidKeyException e) {
+                e.printStackTrace();
+                showAlert("Error", "Invalid key");
+            }
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+            showAlert("Error", "Unable to initialise cipher");
+        }
+        return encrypted;
     }
 
     // Function to send the message.
