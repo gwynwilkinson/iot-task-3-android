@@ -1,5 +1,6 @@
 package com.plump_monkey.iotble;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -396,6 +397,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     }
 
     // Bluetooth Service message handler
+    @SuppressLint("HandlerLeak")
     private Handler mMessageHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
