@@ -60,7 +60,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     int rgbLedServiceValue = 0;
     int fanServiceValue = 0;
     int buzzerServiceValue = 0;
-    String perSessionSalt;
+    String perSessionSalt = new String();
 
     // Activity onCrate Handler
     @Override
@@ -246,7 +246,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             // The PIN and Salt used for the initial handshake are hardcoded.
             // Format up the protocol message with the heaader, protocol version, request bit, Salt
             // Service request, and the Salt. Finish the string with the CRC.
-            String protocolString;
+            String protocolString = new String();
 
             // Set the header, Protocol Version and the Request bit.
             protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
@@ -568,11 +568,11 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 //  ---------------------------------------------------------------------------------------
 // | Byte        | 0 | 1 | 2 |  3  |   4  | 5   | 6 | 7 | 8 |  9 | 10 | 11 | 12 | 13 | 14 |
 //  ---------------------------------------------------------------------------------------
-// | Description |   Header  | Prot | Req | Svc |    Service Data          |  Redund | CRC |
-// |             |           | Ver  | ACK | ID  |                          |   Info  |     |
+// | Description |   Header  | Prot | Req | Svc |    Service Data     |  Redund |   CRC   |
+// |             |           | Ver  | ACK | ID  |                     |   Info  |         |
 //  ---------------------------------------------------------------------------------------
-// | Contents    | I   O   T |   1  | 0/1 | 0-FF|   0 - FFFFFF             | Random  |0-FF |
-//  ----------------------------------------------------------------------------------------
+// | Contents    | I   O   T |   1  | 0/1 | 0-F |   0 - FFFFFF        | Random  |  0-FF   |
+//  ---------------------------------------------------------------------------------------
 
         // Set the header, Protocol Version and the Request bit.
         protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
@@ -622,8 +622,11 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             // Only do this if we had some text
             if(!TextUtils.isEmpty(encryptedString)) {
 
-                sendMessage(encryptedString);
+                Toast toast = Toast.makeText(this, "Sending Command", Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER,0, 0);
+                toast.show();
 
+                sendMessage(encryptedString);
             }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -714,10 +717,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
      *******************************************************************************/
     // Function to send the message.
     private void sendMessage(String encryptedString) throws UnsupportedEncodingException {
-        Toast toast = Toast.makeText(this, "Sending Command", Toast.LENGTH_SHORT);
-        toast.setGravity(Gravity.CENTER,0, 0);
-        toast.show();
-
         for (int i = 0, j = 0; i < encryptedString.length(); i = i + 20, j++) {
             String splitText = encryptedString.substring(i, Math.min(i + 20, encryptedString.length()));
 
