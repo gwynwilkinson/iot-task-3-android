@@ -260,7 +260,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             }
 
             // Set the protocol message service indentification to show we are sending a Salt, and add the salt to the string.
-            protocolString = protocolString + Integer.toString(Constants.SERVICE_SALT) + perSessionSalt;
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_PER_SESSION_SALT) + perSessionSalt;
 
             // Generate the Random number bits and add it to the protocol string.
             protocolString += String.format("%02x",r.nextInt(0xff));
