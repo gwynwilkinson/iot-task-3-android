@@ -33,8 +33,9 @@
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:checked="true"
-            android:text="@string/led"
             android:onClick="onRadioButtonClicked"
+            android:text="@string/led"
+            android:textColor="@color/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/fanRadioButton" />
 
@@ -44,8 +45,9 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:text="@string/fan"
             android:onClick="onRadioButtonClicked"
+            android:text="@string/fan"
+            android:textColor="@color/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/message" />
 
@@ -66,8 +68,9 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:text="@string/rgbled"
             android:onClick="onRadioButtonClicked"
+            android:text="@string/rgbled"
+            android:textColor="@color/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <RadioButton
@@ -77,8 +80,9 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
+            android:onClick="onRadioButtonClicked"
             android:text="@string/buzzer"
-            android:onClick="onRadioButtonClicked" />
+            android:textColor="@color/colorPrimary" />
     </RadioGroup>
 
     <TextView
@@ -87,7 +91,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="Input Pin Code"
+        android:text="Input 3 Digit Pin Code"
+        android:textColor="@color/colorPrimaryDark"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="@+id/sendPin"
@@ -100,7 +105,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:inputType="phone"
-        android:maxLength="19"
+        android:maxLength="3"
         android:text=""
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="@+id/textView3"
@@ -112,8 +117,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:onClick="onSendPIN"
+        android:onClick="onSendCommand"
         android:text="Send Command to Microbit"
+        android:textColor="@color/colorPrimaryDark"
         app:layout_constraintEnd_toEndOf="@+id/message"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/radioGroup1"
@@ -125,6 +131,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="Select Service"
+        android:textColor="@color/colorPrimaryDark"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -136,8 +143,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="Select Service Action"
-        android:textStyle="bold"
+        android:textColor="@color/colorPrimaryDark"
         android:textSize="20sp"
+        android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/radioGroup2" />
 
@@ -149,6 +157,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:text="@string/select_service"
+        android:textColor="@color/colorPrimaryDark"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView5" />

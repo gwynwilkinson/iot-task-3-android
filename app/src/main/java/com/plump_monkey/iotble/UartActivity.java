@@ -43,7 +43,58 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+/*************************************************************************************
+ * Class        :   UartActivity
+ *
+ * Description  :   Activity to handle the BTLE UART communication to the MicroBit
+ *
+ *************************************************************************************/
 public class UartActivity extends AppCompatActivity implements ConnectionStatusListener {
+
+    static int crc_table[] = {
+                0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5,
+                0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b,
+                0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210,
+                0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
+                0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c,
+                0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401,
+                0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b,
+                0x8528, 0x9509, 0xe5ee, 0xf5cf, 0xc5ac, 0xd58d,
+                0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6,
+                0x5695, 0x46b4, 0xb75b, 0xa77a, 0x9719, 0x8738,
+                0xf7df, 0xe7fe, 0xd79d, 0xc7bc, 0x48c4, 0x58e5,
+                0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823,
+                0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948, 0x9969,
+                0xa90a, 0xb92b, 0x5af5, 0x4ad4, 0x7ab7, 0x6a96,
+                0x1a71, 0x0a50, 0x3a33, 0x2a12, 0xdbfd, 0xcbdc,
+                0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a,
+                0x6ca6, 0x7c87, 0x4ce4, 0x5cc5, 0x2c22, 0x3c03,
+                0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec, 0xddcd,
+                0xad2a, 0xbd0b, 0x8d68, 0x9d49, 0x7e97, 0x6eb6,
+                0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0x0e70,
+                0xff9f, 0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a,
+                0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb,
+                0xd10c, 0xc12d, 0xf14e, 0xe16f, 0x1080, 0x00a1,
+                0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046, 0x6067,
+                0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c,
+                0xe37f, 0xf35e, 0x02b1, 0x1290, 0x22f3, 0x32d2,
+                0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb,
+                0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d,
+                0x34e2, 0x24c3, 0x14a0, 0x0481, 0x7466, 0x6447,
+                0x5424, 0x4405, 0xa7db, 0xb7fa, 0x8799, 0x97b8,
+                0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2,
+                0x0691, 0x16b0, 0x6657, 0x7676, 0x4615, 0x5634,
+                0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9,
+                0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806, 0x6827,
+                0x18c0, 0x08e1, 0x3882, 0x28a3, 0xcb7d, 0xdb5c,
+                0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a,
+                0x4a75, 0x5a54, 0x6a37, 0x7a16, 0x0af1, 0x1ad0,
+                0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d,
+                0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07,
+                0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1,
+                0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba,
+                0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
+                0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 };
 
     private BleAdapterService bluetooth_le_adapter;
 
@@ -55,12 +106,16 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     int buzzerServiceValue = 0;
     String perSessionSalt = new String();
 
-    // Handler for BT Service Connection indication
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
+        // Handler for BT Service Connection indication
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
+
+            // Display in the debug log that we have connected the BTLE
             Log.d(Constants.TAG, "onServiceConnected");
+
+            // Get the BTLE adpater
             bluetooth_le_adapter = ((BleAdapterService.LocalBinder) service).getService();
             bluetooth_le_adapter.setActivityHandler(mMessageHandler);
 
@@ -70,14 +125,16 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 showMsg(Utility.htmlColorRed("Failed to set UART TX indications ON"));
             }
 
-            // Generate and send a per session Salt. Hardcode the PIN and Salt used for the
-            // initial handshake.
+            // When the MicroBit first connects over BTLE, generate and send a per session Salt.
+            // The PIN and Salt used for the initial handshake are hardcoded.
+            // Format up the protocol message with the heaader, protocol version, request bit, Salt
+            // Service request, and the Salt. Finish the string with the CRC.
             String protocolString = new String();
 
             // Set the header, Protocol Version and the Request bit.
             protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
 
-            // Generate 5 random characters
+            // Generate 5 random characters for the salt from the character set.
             String randomLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!£$%^&*()_+";
             Random r = new Random();
 
@@ -86,7 +143,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 perSessionSalt += randomLetters.charAt(r.nextInt(randomLetters.length()));
             }
 
-            // Set the service to show we are sending a Salt, and add the salt to the string.
+            // Set the protocol message service indentification to show we are sending a Salt, and add the salt to the string.
             protocolString = protocolString + Integer.toString(Constants.SERVICE_SALT) + perSessionSalt;
 
             // Generate the Random number bits and add it to the protocol string.
@@ -96,9 +153,10 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             // Add the CRC
             protocolString += String.format("%02x",0xff);
 
+            // Display to the debug log the unencoded protocol string.
             Log.d(Constants.TAG, "New Salt Protocol String == " + protocolString);
 
-            // Hard Code the PIN used for the first message
+            // Hard Code the PIN used for the first message. this must be the same on the MicroBit.
             String PIN = "123";
 
             // Hard code the salt. This must be the same on the MicroBit
@@ -135,33 +193,37 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         setContentView(R.layout.activity_uart);
         getSupportActionBar().setTitle(R.string.screen_title_UART);
 
-        // read intent data
+        // Read intent data
         final Intent intent = getIntent();
         MicroBit.getInstance().setConnection_status_listener(this);
 
-        // connect to the Bluetooth smart service
+        // Connect to the Bluetooth smart service
         Intent gattServiceIntent = new Intent(this, BleAdapterService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
 
-        // Set up a listener for the edit text done button
+        // Set up a listener for the PIN code edit text field
         EditText text = (EditText) UartActivity.this.findViewById(R.id.uartPin);
         text.setOnKeyListener(new View.OnKeyListener() {
             @Override
+            // If someone presses enter on the keypad after sending the PIN, send the command
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    sendPIN();
+                    sendCommand();
                     return true;
                 }
                 return false;            }
         });
 
+        // Setup the handler for the "Select Service" button.
         final Button serviceDataButton = findViewById(R.id.serviceActionButton);
-
         serviceDataButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.d(Constants.TAG, "Service Data Button Pressed");
 
+                // We need to know which service is selected to dynamically
+                // display the correct menu. Obtain a reference to the radio
+                // buttons so we can determine which one is checked.
                 RadioButton ledButton = findViewById(R.id.ledRadioButton);
                 RadioButton rgbButton = findViewById(R.id.rgbRadioButton);
                 RadioButton buzzerButton = findViewById(R.id.buzzerRadioButton);
@@ -171,6 +233,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 if(ledButton.isChecked()) {
                     // LED button is selected. Build the options list
                     final CharSequence[] ledItems = {"Off", "On", "SoS"};
+
                     android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
                     builder.setTitle("LED Options");
                     builder.setSingleChoiceItems(ledItems, -1, new DialogInterface.OnClickListener() {
@@ -192,7 +255,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                     builder.show();
                 } else if ( rgbButton.isChecked() ) {
                     // RGB button is selected. Build the options list
-
                     final CharSequence[] rgbLedItems = {"Off", "Red", "Blue", "Green", "Magenta", "Yellow", "Cyan","White","Party"};
 
                     android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
@@ -229,7 +291,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                     builder.show();
                 } else if ( buzzerButton.isChecked() ) {
                     // Buzzer button is selected. Build the options list
-
                     final CharSequence[] buzzerItems = {"Off","Basic","Siren","Fanfare"};
 
                     android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
@@ -256,7 +317,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                     builder.show();
                 } else if ( fanButton.isChecked() ) {
                     // Fan button is selected. Build the options list
-
                     final CharSequence[] buzzerItems = {"Off","Slow","Medium","Fast"};
 
                     android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(UartActivity.this);
@@ -287,8 +347,8 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     }
 
     // Handler for the radio buttons.
-    // Clears any other radio buttons and resets the text on
-    // the Service Selection button
+    // When a button is pressed, it clears any other radio
+    // buttons and resets the text on the Service Selection button
     public void onRadioButtonClicked(View view) {
 
         Button serviceDataButton = findViewById(R.id.serviceActionButton);
@@ -483,18 +543,17 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         builder.show();
     }
 
-    // Handler for the Send PIN button
-    public void onSendPIN(View view) {
-        Log.d(Constants.TAG, "onSendPIN");
-        sendPIN();
+    // Handler for the Send Command button
+    public void onSendCommand(View view) {
+        Log.d(Constants.TAG, "onSendCommand");
+        sendCommand();
     }
 
     // Format and send the message to Microbit
-    private void sendPIN() {
-
+    private void sendCommand() {
         // Find the PIN Number Edit Text box and dump the Pin to the debug log.
         EditText pinButton = (EditText) UartActivity.this.findViewById(R.id.uartPin);
-        Log.d(Constants.TAG, "onSendPIN: " + pinButton.getText().toString());
+        Log.d(Constants.TAG, "onSendCommand: " + pinButton.getText().toString());
 
         // Check that there has been a service action selected
         Button serviceActionButton = findViewById(R.id.serviceActionButton);
@@ -508,12 +567,22 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             return;
         }
 
-        // Check that a PIN has been entered. Otherwise fire an error and return
+        Log.d(Constants.TAG, "GHJGJHGJHJHJHGHGJ- " + pinButton.getText().toString().length());
+
+        // Check that a valid PIN has been entered. Otherwise fire an error and return
         if (pinButton.getText().toString().matches("")) {
             Log.d(Constants.TAG, "No PIN entered");
 
             // No Service Action has been selected. Display an error and quit
             Toast toast = Toast.makeText(this, "Enter a PIN", Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+            return;
+        } else if (pinButton.getText().toString().length() != 3) {
+            Log.d(Constants.TAG, "Invalid PIN entered");
+
+            // No Service Action has been selected. Display an error and quit
+            Toast toast = Toast.makeText(this, "Enter a 3 digit PIN", Toast.LENGTH_LONG);
             toast.setGravity(Gravity.CENTER, 0, 0);
             toast.show();
             return;
@@ -534,13 +603,12 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 // | Description |   Header  | Prot | Req | Svc |    Service Data          |  Redund | CRC |
 // |             |           | Ver  | ACK | ID  |                          |   Info  |     |
 //  ---------------------------------------------------------------------------------------
-// | Contents    | I   O   T |   1  | 0/1 | 0-FF|   0 - FFFFFFFF          |  Random  |0-FF |
+// | Contents    | I   O   T |   1  | 0/1 | 0-FF|   0 - FFFFFF             | Random  |0-FF |
 //  ----------------------------------------------------------------------------------------
 
         // Set the header, Protocol Version and the Request bit.
         protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
 
-        String serviceActionText = serviceActionButton.getText().toString();
         // See which button is selected
         if (ledButton.isChecked()) {
             // LED button is selected. Set the Service ID and the Data
@@ -566,6 +634,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         protocolString = protocolString + String.format("%02x",n);
 
         // TODO - CRC
+        Log.d(Constants.TAG, "Calculated CRC value = " + Integer.toHexString(ccitt_crc(protocolString,13)));
         // Add the CRC
         protocolString = protocolString + String.format("%02x",0xff);
 
@@ -691,4 +760,20 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
         return new byte[0];
     }
+
+    int ccitt_crc(String protocolString, int length)
+    {
+        int count;
+        int crc = 0;
+        int temp;
+
+        for (count = 0; count < length; ++count)
+        {
+            temp = (protocolString.charAt(count) ^ (crc >> 8)) & 0xff;
+            crc = crc_table[temp] ^ (crc << 8);
+        }
+        return ((crc%256) & 0xff);
+
+    }
 }
+
