@@ -51,51 +51,6 @@ import javax.crypto.spec.SecretKeySpec;
  *************************************************************************************/
 public class UartActivity extends AppCompatActivity implements ConnectionStatusListener {
 
-    static int crc_table[] = {
-                0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5,
-                0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b,
-                0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210,
-                0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
-                0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c,
-                0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401,
-                0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b,
-                0x8528, 0x9509, 0xe5ee, 0xf5cf, 0xc5ac, 0xd58d,
-                0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6,
-                0x5695, 0x46b4, 0xb75b, 0xa77a, 0x9719, 0x8738,
-                0xf7df, 0xe7fe, 0xd79d, 0xc7bc, 0x48c4, 0x58e5,
-                0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823,
-                0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948, 0x9969,
-                0xa90a, 0xb92b, 0x5af5, 0x4ad4, 0x7ab7, 0x6a96,
-                0x1a71, 0x0a50, 0x3a33, 0x2a12, 0xdbfd, 0xcbdc,
-                0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a,
-                0x6ca6, 0x7c87, 0x4ce4, 0x5cc5, 0x2c22, 0x3c03,
-                0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec, 0xddcd,
-                0xad2a, 0xbd0b, 0x8d68, 0x9d49, 0x7e97, 0x6eb6,
-                0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0x0e70,
-                0xff9f, 0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a,
-                0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb,
-                0xd10c, 0xc12d, 0xf14e, 0xe16f, 0x1080, 0x00a1,
-                0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046, 0x6067,
-                0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c,
-                0xe37f, 0xf35e, 0x02b1, 0x1290, 0x22f3, 0x32d2,
-                0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb,
-                0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d,
-                0x34e2, 0x24c3, 0x14a0, 0x0481, 0x7466, 0x6447,
-                0x5424, 0x4405, 0xa7db, 0xb7fa, 0x8799, 0x97b8,
-                0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2,
-                0x0691, 0x16b0, 0x6657, 0x7676, 0x4615, 0x5634,
-                0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9,
-                0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806, 0x6827,
-                0x18c0, 0x08e1, 0x3882, 0x28a3, 0xcb7d, 0xdb5c,
-                0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a,
-                0x4a75, 0x5a54, 0x6a37, 0x7a16, 0x0af1, 0x1ad0,
-                0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d,
-                0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07,
-                0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1,
-                0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba,
-                0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
-                0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 };
-
     private BleAdapterService bluetooth_le_adapter;
 
     private boolean exiting=false;
@@ -104,86 +59,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
     int rgbLedServiceValue = 0;
     int fanServiceValue = 0;
     int buzzerServiceValue = 0;
-    String perSessionSalt = new String();
-
-    private final ServiceConnection mServiceConnection = new ServiceConnection() {
-
-        // Handler for BT Service Connection indication
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder service) {
-
-            // Display in the debug log that we have connected the BTLE
-            Log.d(Constants.TAG, "onServiceConnected");
-
-            // Get the BTLE adpater
-            bluetooth_le_adapter = ((BleAdapterService.LocalBinder) service).getService();
-            bluetooth_le_adapter.setActivityHandler(mMessageHandler);
-
-            if (bluetooth_le_adapter.setIndicationsState(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_TX_CHARACTERISTIC_UUID), true)) {
-                showMsg(Utility.htmlColorGreen("UART TX indications ON"));
-            } else {
-                showMsg(Utility.htmlColorRed("Failed to set UART TX indications ON"));
-            }
-
-            // When the MicroBit first connects over BTLE, generate and send a per session Salt.
-            // The PIN and Salt used for the initial handshake are hardcoded.
-            // Format up the protocol message with the heaader, protocol version, request bit, Salt
-            // Service request, and the Salt. Finish the string with the CRC.
-            String protocolString = new String();
-
-            // Set the header, Protocol Version and the Request bit.
-            protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
-
-            // Generate 5 random characters for the salt from the character set.
-            String randomLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!£$%^&*()_+";
-            Random r = new Random();
-
-            // Set the new salt in the perSessionSalt variable
-            for (int i = 0; i < 5; i++) {
-                perSessionSalt += randomLetters.charAt(r.nextInt(randomLetters.length()));
-            }
-
-            // Set the protocol message service indentification to show we are sending a Salt, and add the salt to the string.
-            protocolString = protocolString + Integer.toString(Constants.SERVICE_SALT) + perSessionSalt;
-
-            // Generate the Random number bits and add it to the protocol string.
-            protocolString += String.format("%02x",r.nextInt(0xff));
-
-            // TODO - CRC
-            // Add the CRC
-            protocolString += String.format("%02x",0xff);
-
-            // Display to the debug log the unencoded protocol string.
-            Log.d(Constants.TAG, "New Salt Protocol String == " + protocolString);
-
-            // Hard Code the PIN used for the first message. this must be the same on the MicroBit.
-            String PIN = "123";
-
-            // Hard code the salt. This must be the same on the MicroBit
-            String initialSalt = "ThisIsMySaltThereAreManyLikeIt";
-
-            // Now try and encrypt the protocol message
-            try {
-                byte[] encrypted = encryptString(protocolString, PIN, initialSalt);
-
-                // Split the encrypted text and send over BLE.
-                String encryptedString =  Utility.byteArrayAsHexString(encrypted);
-
-                // Only do this if we had some text
-                if(!TextUtils.isEmpty(encryptedString)) {
-                    sendMessage(encryptedString);
-                }
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                showMsg("Unable to convert text to ASCII bytes");
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            bluetooth_le_adapter = null;
-        }
-    };
+    String perSessionSalt;
 
     // Activity onCrate Handler
     @Override
@@ -345,6 +221,87 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             }
         });
     }
+
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+
+        // Handler for BT Service Connection indication
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder service) {
+
+            // Display in the debug log that we have connected the BTLE
+            Log.d(Constants.TAG, "onServiceConnected");
+
+            // Get the BTLE adpater
+            bluetooth_le_adapter = ((BleAdapterService.LocalBinder) service).getService();
+            bluetooth_le_adapter.setActivityHandler(mMessageHandler);
+
+            if (bluetooth_le_adapter.setIndicationsState(Utility.normaliseUUID(BleAdapterService.UARTSERVICE_SERVICE_UUID), Utility.normaliseUUID(BleAdapterService.UART_TX_CHARACTERISTIC_UUID), true)) {
+                showMsg(Utility.htmlColorGreen("UART TX indications ON"));
+            } else {
+                showMsg(Utility.htmlColorRed("Failed to set UART TX indications ON"));
+            }
+
+            // When the MicroBit first connects over BTLE, generate and send a per session Salt.
+            // The PIN and Salt used for the initial handshake are hardcoded.
+            // Format up the protocol message with the heaader, protocol version, request bit, Salt
+            // Service request, and the Salt. Finish the string with the CRC.
+            String protocolString;
+
+            // Set the header, Protocol Version and the Request bit.
+            protocolString = "IoT" + Integer.toString(Constants.PROTOCOL_VERSION) + Integer.toString(Constants.REQUEST);
+
+            // Generate 5 random characters for the salt from the character set.
+            String randomLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!£$%^&*()_+";
+            Random r = new Random();
+
+            // Set the new salt in the perSessionSalt variable
+            for (int i = 0; i < 5; i++) {
+                perSessionSalt += randomLetters.charAt(r.nextInt(randomLetters.length()));
+            }
+
+            // Set the protocol message service indentification to show we are sending a Salt, and add the salt to the string.
+            protocolString = protocolString + Integer.toString(Constants.SERVICE_SALT) + perSessionSalt;
+
+            // Generate the Random number bits and add it to the protocol string.
+            protocolString += String.format("%02x",r.nextInt(0xff));
+
+            // Add the CRC
+            String crc = Integer.toHexString(ccitt_crc(protocolString,13));
+            Log.d(Constants.TAG, "Calculated CRC value = " + crc);
+
+            protocolString = protocolString + crc;
+
+            // Display to the debug log the unencoded protocol string.
+            Log.d(Constants.TAG, "New Salt Protocol String == " + protocolString);
+
+            // Hard Code the PIN used for the first message. this must be the same on the MicroBit.
+            String PIN = "123";
+
+            // Hard code the salt. This must be the same on the MicroBit
+            String initialSalt = "ThisIsMySaltThereAreManyLikeIt";
+
+            // Now try and encrypt the protocol message
+            try {
+                byte[] encrypted = encryptString(protocolString, PIN, initialSalt);
+
+                // Split the encrypted text and send over BLE.
+                String encryptedString =  Utility.byteArrayAsHexString(encrypted);
+
+                // Only do this if we had some text
+                if(!TextUtils.isEmpty(encryptedString)) {
+                    sendMessage(encryptedString);
+                }
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                showMsg("Unable to convert text to ASCII bytes");
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            bluetooth_le_adapter = null;
+        }
+    };
 
     // Handler for the radio buttons.
     // When a button is pressed, it clears any other radio
@@ -549,6 +506,17 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         sendCommand();
     }
 
+    /*****************************************************************************
+     *  Method:         sendCommand
+     *
+     *  Description:    Method called when the Send Command button is pressed.
+     *                  Extracts the PIN from the Edit Text box and validates it.
+     *                  Formats the Protocol Message as per the definition.
+     *                  Service ID and Data depend on the UI controls which are set.
+     *                  Calls the encryption and sendMessage methods with the formatted
+     *                  message.
+     *
+     *****************************************************************************/
     // Format and send the message to Microbit
     private void sendCommand() {
         // Find the PIN Number Edit Text box and dump the Pin to the debug log.
@@ -566,8 +534,6 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
             toast.show();
             return;
         }
-
-        Log.d(Constants.TAG, "GHJGJHGJHJHJHGHGJ- " + pinButton.getText().toString().length());
 
         // Check that a valid PIN has been entered. Otherwise fire an error and return
         if (pinButton.getText().toString().matches("")) {
@@ -633,10 +599,11 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         int n = rand.nextInt(0xff);
         protocolString = protocolString + String.format("%02x",n);
 
-        // TODO - CRC
-        Log.d(Constants.TAG, "Calculated CRC value = " + Integer.toHexString(ccitt_crc(protocolString,13)));
+        String crc = Integer.toHexString(ccitt_crc(protocolString,13));
+        Log.d(Constants.TAG, "Calculated CRC value = " + crc);
+
         // Add the CRC
-        protocolString = protocolString + String.format("%02x",0xff);
+        protocolString = protocolString + crc;
 
         Log.d(Constants.TAG, "Final Protocol String is - " + protocolString + " Length - "+ protocolString.length());
 
@@ -662,6 +629,21 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     }
 
+    /*****************************************************************************
+     *
+     * Method:          encryptString
+     *
+     * Description:     The parameters to the method are the Protocol Message,
+     *                  the input PIN, and the salt.
+     *
+     *                  A DPK is generated as a SHA-1 Hash of the combination of the
+     *                  PIN + Salt. This is truncated to 16 bytes as the key for AES
+     *                  is only 16 bytes, but the SHA-1 Hash is 20 bytes.
+     *
+     *                  Sets up an instance of a AES-128-ECB Cipher and encrypts
+     *                  the protocol string with the DPK.
+     *
+     *****************************************************************************/
     private byte[] encryptString(String protocolString, String inputPIN, String salt) {
         // Hash the PIN and Salt to create the dpk
         byte[] dpk = sha1Hash(inputPIN + salt);
@@ -689,7 +671,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
                 try {
 
-                    String textToEncrypt = "IoT-";
+                    String textToEncrypt;
 
                     textToEncrypt = protocolString;
 
@@ -719,6 +701,15 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         return encrypted;
     }
 
+    /*******************************************************************************
+     *
+     *  Method:             sendMessage
+     *
+     *  Description:        Receives the encrypted ASCII string as a parameter and splits
+     *                      the data into 20 byte chunks. Uses the BLE UART service to send
+     *                      the data chunks.
+     *
+     *******************************************************************************/
     // Function to send the message.
     private void sendMessage(String encryptedString) throws UnsupportedEncodingException {
         Toast toast = Toast.makeText(this, "Sending Command", Toast.LENGTH_SHORT);
@@ -737,6 +728,13 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
     }
 
+    /*******************************************************************************
+     *
+     *  Method:             sha1Hash
+     *
+     *  Description:        Generate a SHA-1 hash of the given input string.
+     *
+     *******************************************************************************/
     public  byte[] sha1Hash (String inputString) {
         try {
             // Create SHA-1 Hash
@@ -760,6 +758,58 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         }
         return new byte[0];
     }
+
+    /*******************************************************************************
+     *
+     *  Method:             ccitt_crc
+     *
+     *  Description:        Generate a 1 byte CCITT-CRC for a given message.
+     *
+     *******************************************************************************/
+    static int crc_table[] = {
+            0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5,
+            0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b,
+            0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210,
+            0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
+            0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c,
+            0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401,
+            0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b,
+            0x8528, 0x9509, 0xe5ee, 0xf5cf, 0xc5ac, 0xd58d,
+            0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6,
+            0x5695, 0x46b4, 0xb75b, 0xa77a, 0x9719, 0x8738,
+            0xf7df, 0xe7fe, 0xd79d, 0xc7bc, 0x48c4, 0x58e5,
+            0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823,
+            0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948, 0x9969,
+            0xa90a, 0xb92b, 0x5af5, 0x4ad4, 0x7ab7, 0x6a96,
+            0x1a71, 0x0a50, 0x3a33, 0x2a12, 0xdbfd, 0xcbdc,
+            0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a,
+            0x6ca6, 0x7c87, 0x4ce4, 0x5cc5, 0x2c22, 0x3c03,
+            0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec, 0xddcd,
+            0xad2a, 0xbd0b, 0x8d68, 0x9d49, 0x7e97, 0x6eb6,
+            0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0x0e70,
+            0xff9f, 0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a,
+            0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb,
+            0xd10c, 0xc12d, 0xf14e, 0xe16f, 0x1080, 0x00a1,
+            0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046, 0x6067,
+            0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c,
+            0xe37f, 0xf35e, 0x02b1, 0x1290, 0x22f3, 0x32d2,
+            0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb,
+            0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d,
+            0x34e2, 0x24c3, 0x14a0, 0x0481, 0x7466, 0x6447,
+            0x5424, 0x4405, 0xa7db, 0xb7fa, 0x8799, 0x97b8,
+            0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2,
+            0x0691, 0x16b0, 0x6657, 0x7676, 0x4615, 0x5634,
+            0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9,
+            0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806, 0x6827,
+            0x18c0, 0x08e1, 0x3882, 0x28a3, 0xcb7d, 0xdb5c,
+            0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a,
+            0x4a75, 0x5a54, 0x6a37, 0x7a16, 0x0af1, 0x1ad0,
+            0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d,
+            0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07,
+            0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1,
+            0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba,
+            0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
+            0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 };
 
     int ccitt_crc(String protocolString, int length)
     {
