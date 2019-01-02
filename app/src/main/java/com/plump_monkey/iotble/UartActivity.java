@@ -452,7 +452,61 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                             return;
                         }
                         Log.d(Constants.TAG, "micro:bit: " + ascii);
-                        showAlert( "Microbit Response", ascii);
+
+                        String crc = String.format("%02x", ccitt_crc(ascii, 13));
+                        Log.d(Constants.TAG, "CRC = " + crc);
+
+                        String serviceID = ascii.substring(5,6);
+                        String responseCode = ascii.substring(10,11);
+                        String status;
+                        String service;
+                        String message = "";
+
+                        // Verify IoT header and CRC
+                        if(ascii.substring(0,3).equals("IoT")) {
+                            Log.d(Constants.TAG, "IoT match");
+
+                            if((ascii.substring(13,15).equals(crc))) {
+                                Log.d(Constants.TAG, "CRC match");
+
+                                // Verify Response Flag
+                                if(ascii.substring(3,4).equals("1")) {
+                                    Log.d(Constants.TAG, "Got this far!!!");
+
+                                    if(responseCode.equals("0")) {
+                                        status = "Failed";
+                                    } else {
+                                        status = "Success";
+                                    }
+
+                                    switch (ascii.substring(5,6) ) {
+                                        case "1":
+                                            service = "LED ";
+                                            break;
+                                        case "2":
+                                            service = "Buzzer ";
+                                            break;
+                                        case "3":
+                                            service = "Fan ";
+                                            break;
+                                        case "4":
+                                            service = "RGB LED ";
+                                            break;
+                                        case "8":
+                                            service = "PIN Code ";
+                                            status = "Incorrect";
+                                            break;
+                                        default:
+                                            service = "Unknown ";
+                                            break;
+                                    }
+                                    message = service + status;
+
+                                    Log.d(Constants.TAG, message);
+                                }
+                            }
+                        }
+                        showAlert( "Microbit Response", message);
                     }
                     break;
                 case BleAdapterService.MESSAGE:
@@ -601,7 +655,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
         int n = rand.nextInt(0xff);
         protocolString = protocolString + String.format("%02x",n);
 
-        String crc = Integer.toHexString(ccitt_crc(protocolString,13));
+        String crc = String.format("%02x", ccitt_crc(protocolString, 13));
         Log.d(Constants.TAG, "Calculated CRC value = " + crc);
 
         // Add the CRC
