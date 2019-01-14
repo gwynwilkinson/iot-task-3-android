@@ -244,7 +244,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
 
             // When the MicroBit first connects over BTLE, generate and send a per session Salt.
             // The PIN and Salt used for the initial handshake are hardcoded.
-            // Format up the protocol message with the heaader, protocol version, request bit, Salt
+            // Format up the protocol message with the header, protocol version, request bit, Salt
             // Service request, and the Salt. Finish the string with the CRC.
             String protocolString = new String();
 
@@ -260,7 +260,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                 perSessionSalt += randomLetters.charAt(r.nextInt(randomLetters.length()));
             }
 
-            // Set the protocol message service indentification to show we are sending a Salt, and add the salt to the string.
+            // Set the protocol message service identification to show we are sending a Salt, and add the salt to the string.
             protocolString = protocolString + Integer.toString(Constants.SERVICE_PER_SESSION_SALT) + perSessionSalt;
 
             // Generate the Random number bits and add it to the protocol string.
@@ -436,6 +436,11 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                     break;
 
                 case BleAdapterService.NOTIFICATION_OR_INDICATION_RECEIVED:
+
+                    // Received notification from the Micro:bit
+                    // Will need to parse the message and format an alert text box
+                    // to display the message to the user.
+
                     bundle = msg.getData();
                     service_uuid = bundle.getString(BleAdapterService.PARCEL_SERVICE_UUID);
                     characteristic_uuid = bundle.getString(BleAdapterService.PARCEL_CHARACTERISTIC_UUID);
@@ -462,17 +467,12 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                         String service;
                         String message = "";
 
-                        // Verify IoT header and CRC
+                        // Verify IoT header and CRC match
                         if(ascii.substring(0,3).equals("IoT")) {
-                            Log.d(Constants.TAG, "IoT match");
-
                             if((ascii.substring(13,15).equals(crc))) {
-                                Log.d(Constants.TAG, "CRC match");
-
-                                // Verify Response Flag
+                                // Message parsed ok. Verify Response Flag. Micro:bit to
+                                // Android currently only supports response notifications.
                                 if(ascii.substring(3,4).equals("1")) {
-                                    Log.d(Constants.TAG, "Got this far!!!");
-
                                     if(responseCode.equals("0")) {
                                         status = "Failed";
                                     } else {
@@ -509,6 +509,7 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                         showAlert( "Microbit Response", message);
                     }
                     break;
+
                 case BleAdapterService.MESSAGE:
                     bundle = msg.getData();
                     String text = bundle.getString(BleAdapterService.PARCEL_TEXT);
