@@ -487,10 +487,10 @@ public class UartActivity extends AppCompatActivity implements ConnectionStatusL
                                             service = "Buzzer ";
                                             break;
                                         case "3":
-                                            service = "Fan ";
+                                            service = "RGB LED ";
                                             break;
                                         case "4":
-                                            service = "RGB LED ";
+                                            service = "Fan ";
                                             break;
                                         case "8":
                                             service = "PIN Code ";
