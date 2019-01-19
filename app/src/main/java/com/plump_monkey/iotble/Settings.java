@@ -8,7 +8,7 @@ public class Settings {
 
     private static Settings instance;
     private short scrolling_delay=500;
-    private boolean filter_unpaired_devices=true;
+    private boolean filter_unpaired_devices=false;
 
     private static final String SETTINGS_FILE = "com.plump_monkey.iotble.settings_file";
     private static final String SCROLLING_DELAY = "scrolling_delay";
@@ -38,7 +38,7 @@ public class Settings {
         Log.d(Constants.TAG,"Restoring preferences");
         SharedPreferences sharedPref = context.getSharedPreferences(SETTINGS_FILE, Context.MODE_PRIVATE);
         scrolling_delay = (short)  sharedPref.getInt(SCROLLING_DELAY,500);
-        filter_unpaired_devices = sharedPref.getBoolean(FILTER_UNPAIRED_DEVICES,true);
+        filter_unpaired_devices = sharedPref.getBoolean(FILTER_UNPAIRED_DEVICES,false);
     }
 
     public short getScrolling_delay() {
