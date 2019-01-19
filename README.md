@@ -24,7 +24,7 @@ Micro:bit code respository:- https://gitlab.uwe.ac.uk/jd6-white/iot_task_3
 
 ## How to Build
 
-Using Android Studio 3.3, clone the project from git hub and import into Android Studio. Use 'Run->Run app' to install the apk onto the connected Android device.
+Using Android Studio 3.2, clone the project from git hub and import into Android Studio. Use 'Run->Run app' to install the apk onto the connected Android device.
 
 ## Installing the apk
 
