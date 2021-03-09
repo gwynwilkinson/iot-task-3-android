@@ -18,9 +18,9 @@ The Micro:bit will receive the encrypted text and then prompt the user for a pin
 
 ## Code Locations
 
-Android Client code repository:- https://gitlab.uwe.ac.uk/jd6-white/IoT-Task-3-Android-Code
+Android Client code repository:- https://github.com/gwynwilkinson/iot-task-3-android
 
-Micro:bit code repository:- https://gitlab.uwe.ac.uk/jd6-white/iot_task_3
+Micro:bit code repository:- https://github.com/gwynwilkinson/iot-task-3
 
 ## How to Build
 
